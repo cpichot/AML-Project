@@ -75,7 +75,8 @@ public enum SKOS
      */
     public IRI toIRI()
     {
-    	return IRI.create(Namespace.SKOS + uri);
+    	//return IRI.create(Namespace.SKOS + uri);//cpichotjv2020
+    	return IRI.create(Namespace.SKOS.uri + uri);//cpichotjv2020
     }
     
     public String toString()

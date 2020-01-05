@@ -69,6 +69,7 @@ import aml.filter.QualityFlagger;
 import aml.filter.RepairMap;
 import aml.match.Alignment;
 import aml.match.Mapping;
+import aml.ontology.Definitions;//cpichotjv2020
 import aml.ontology.Lexicon;
 import aml.ontology.Ontology;
 import aml.ontology.RelationshipMap;
@@ -917,6 +918,7 @@ public class ViewMapping extends JDialog implements ActionListener
 		else
 			o = target;
 		Lexicon lex = o.getLexicon();
+		Definitions def = o.getDefinitions();//cpichotjv2020
 		
 		//Get the local name
         JLabel localName = new JLabel("<html>Local Name: <i>" +
@@ -954,6 +956,21 @@ public class ViewMapping extends JDialog implements ActionListener
 	        JLabel other = new JLabel(lab);
 	        p.add(other);
 		}
+		
+        //Get the definitions //cpichotjv2020
+        String defini = "<html>Def(s): ";
+        Set<String> defs = def.getNames(id);
+       
+		for(String s : defs)
+			defini += "<i>" + s + "</i>; ";
+		if(defs.size() == 0)
+			defini += "N/A</html>";
+		else
+			defini = defini.substring(0, defini.length()-2) + "</html>";
+        JLabel labelDef = new JLabel(defini);
+        p.add(labelDef);		
+		
+		
         //Formulas
         names = lex.getNames(id,LexicalType.FORMULA);
 		if(names.size() > 0)
@@ -1090,6 +1107,7 @@ public class ViewMapping extends JDialog implements ActionListener
 		else
 			o = target;
 		Lexicon lex = o.getLexicon();
+		Definitions def = o.getDefinitions();//cpichotjv2020
 		
 		//Get the local name
         JLabel localName = new JLabel("<html>Local Name: <i>" +
@@ -1106,6 +1124,19 @@ public class ViewMapping extends JDialog implements ActionListener
 			lab = lab.substring(0, lab.length()-2) + "</html>";
         JLabel label = new JLabel(lab);
         p.add(label);
+
+        //Get the definitions //cpichotjv2020
+        String defini = "<html>Def(s): ";
+        Set<String> defs = def.getNames(id);
+		for(String s : defs)
+			defini += "<i>" + s + "</i>; ";
+		if(defs.size() == 0)
+			defini += "N/A</html>";
+		else
+			defini = defini.substring(0, defini.length()-2) + "</html>";
+        JLabel labelDef = new JLabel(defini);
+        p.add(labelDef);
+        
         
 		if(t.equals(EntityType.OBJECT))
 		{

@@ -81,6 +81,11 @@ public class Ontology
 	//Its set of obsolete classes
 	protected HashSet<Integer> obsolete;
 	
+	//Its definitions //cpichotjv2020	
+	protected Definitions definitions; //cpichotjv2020	
+	//Its matches //cpichotjv2020	
+	protected ExistingMatches existingMatches; //cpichotjv2020	
+	
 	//Global variables & data structures
 	protected AML aml;
 	protected boolean useReasoner;
@@ -118,6 +123,8 @@ public class Ontology
 		useReasoner = aml.useReasoner();
 		uris = aml.getURIMap();
 		rm = aml.getRelationshipMap();
+        definitions = new Definitions(); //cpichotjv2020
+        existingMatches = new ExistingMatches(); //cpichotjv2020	
 	}
 	
 	/**
@@ -208,6 +215,8 @@ public class Ontology
 		aml = null;
 		uris = null;
 		rm = null;
+		definitions = null;//cpichotjv2020
+		existingMatches = null;//cpichotjv2020
 	}
 
 	/**
@@ -278,6 +287,40 @@ public class Ontology
 	}
 
 	/**
+	 * @return the Ontology's Definitions //cpichotjv2020
+	 */
+	public Definitions getDefinitions()
+	{
+		return definitions;
+	}
+
+	/** //cpichotjv2020
+	 * @param index: the index of the term/property to get the definitions
+	 * @return the primary name of the term/property with the given index
+	 */
+	public Set<String> getExistingMatches(int index)
+	{
+		return getExistingMatches().getNames(index);
+	}
+
+	/**
+	 * @return the Ontology's ExistingMatches //cpichotjv2020
+	 */
+	public ExistingMatches getExistingMatches()
+	{
+		return existingMatches;
+	}
+
+	/** //cpichotjv2020
+	 * @param index: the index of the term/property to get the definitions
+	 * @return the primary name of the term/property with the given index
+	 */
+	public String getDefinitions(int index)
+	{
+		return getDefinitions().getNames(index).toString();
+	}
+	
+	/**
 	 * @return the set of class local names in the Ontology
 	 */
 	public Set<String> getLocalNames()
@@ -301,7 +344,13 @@ public class Ontology
 	{
 		return uri;
 	}
-
+	
+	 //cpichotjv2010
+	public String getURI(int index)
+	{
+		return uris.getURI(index);
+	}
+	
 	/**
 	 * @return this Ontology's ValueMap
 	 */
@@ -365,6 +414,7 @@ public class Ontology
 		if(o.containsClassInSignature(SKOS.CONCEPT_SCHEME.toIRI()) &&
 				o.containsClassInSignature(SKOS.CONCEPT.toIRI()))
 		{
+			System.out.println("*** SKOS format detected! ***");
 			isSKOS = true;
 			//Update the URI of the ontology
 			OWLClass scheme = getClass(o,SKOS.CONCEPT_SCHEME.toIRI());
@@ -381,6 +431,7 @@ public class Ontology
 		}
 		else
 		{
+			System.out.println("*** Not SKOS format! ***");
 			isSKOS = false;
 			//Update the URI of the ontology (if it lists one)
 			if(o.getOntologyID().getOntologyIRI() != null)
@@ -398,7 +449,7 @@ public class Ontology
 
 	//SKOS Thesauri
 
-	//Processes the classes and their lexical information
+	//Processes the classes and their lexical information  // AND THEIR DEFINITIONS //cpichotjv2020
 	private void getSKOSConcepts(OWLOntology o)
 	{
 		//The Lexical type and weight
@@ -445,6 +496,63 @@ public class Ontology
 				//Labels and synonyms go to the Lexicon
 				String propUri = annotation.getProperty().getIRI().toString();
 				type = LexicalType.getLexicalType(propUri);
+				
+				
+            	//cpichotjv2020 definition retrieving
+            	if(annotation.getProperty().toString().equals("<http://www.w3.org/2004/02/skos/core#definition>"))
+            	{//cpichotjv2020
+            		weight = 1.0; 
+            		type = null ;
+            		String definition = "";
+	            	if(annotation.getValue() instanceof OWLLiteral)
+	            	{
+	            		OWLLiteral val = (OWLLiteral) annotation.getValue();
+	            		definition = val.getLiteral();
+	            		String lang = val.getLang();
+	            		if(lang.equals(""))
+	            			lang = "en";
+	            		definitions.add(id, definition, lang, null, "", weight);
+		            }
+	            	else if(annotation.getValue() instanceof IRI)
+	            	{
+	            		OWLNamedIndividual ni = factory.getOWLNamedIndividual((IRI) annotation.getValue());
+	                    for(OWLAnnotation a : ni.getAnnotations(o))
+	                    {
+	                       	if(a.getValue() instanceof OWLLiteral)
+	                       	{
+	                       		OWLLiteral val = (OWLLiteral) a.getValue();
+	                       		definition = val.getLiteral();
+	    	                	if(!a.getProperty().toString().equals("<http://art.uniroma2.it/ontologies/vocbench#hasStatus>")//cpichotjv2020
+	    	                			& !a.getProperty().toString().equals("<http://purl.org/dc/terms/created>")//cpichotjv2020
+	    	    	                	& !a.getProperty().toString().equals("<http://purl.org/dc/terms/modified>"))//cpichotjv2020
+	    	    	            {
+	                       		String lang = val.getLang();
+	    	            		if(lang.equals(""))
+	    	            			lang = "en";
+    		            		definitions.add(id, definition, lang, null, "", weight);
+	    	    	            }	    	                	
+	                       	}
+	            		}
+	            	}
+            	}//cpichotjv2020
+            	//cpichotjv2020 existing matches retrieving             	
+            	if(annotation.getProperty().toString().equals("<http://www.w3.org/2004/02/skos/core#exactMatch>"))
+            	{//cpichotjv2020
+            		String existingMatch = "";
+            		String source = "";
+	            	if(annotation.getValue() instanceof IRI)
+	            	{
+	            		//OWLNamedIndividual ni = factory.getOWLNamedIndividual((IRI) annotation.getValue());
+	            		//existingMatch = ni.toString();
+	            		existingMatch = annotation.getValue().toString();
+	            		//System.out.println(existingMatch);
+	            	}
+	            	existingMatches.add(id, existingMatch, source);	            	
+            	}//cpichotjv2020
+					
+				
+				
+				
 				if(type != null)
 				{
 					weight = type.getDefaultWeight();
@@ -466,10 +574,20 @@ public class Ontology
 							{
 								OWLLiteral val = (OWLLiteral) a.getValue();
 								name = val.getLiteral();
+								
+	    	                	if(!a.getProperty().toString().equals("<http://art.uniroma2.it/ontologies/vocbench#hasStatus>")//cpichotjv2020
+	    	                			& !a.getProperty().toString().equals("<http://purl.org/dc/terms/created>")//cpichotjv2020
+	    	    	                	& !a.getProperty().toString().equals("<http://purl.org/dc/terms/modified>"))//cpichotjv2020
+	    	    	            {//cpichotjv2020
+	    	                		//System.out.println(a.getProperty().toString());//CP
+
 								String lang = val.getLang();
 								if(lang.equals(""))
 									lang = "en";
 								lex.add(id, name, lang, type, "", weight);
+	   		            		
+	    	    	            }//cpichotjv2020
+	    	                	
 							}
 						}
 					}
@@ -1122,7 +1240,7 @@ public class Ontology
 		//restrictions on disjoint classes for the same non-functional object property
 		objectAllValues = new Table2Map<Integer,Integer,Integer>();
 		objectSomeValues = new Table2Map<Integer,Integer,Integer>();
-
+		
 		//I - Relationships involving classes
 		//Get an iterator over the ontology classes
 		Set<OWLClass> classes = o.getClassesInSignature(true);

@@ -43,6 +43,11 @@ public class Mapping implements Comparable<Mapping>
 	private MappingRelation rel;
 	//The status of the Mapping
 	private MappingStatus s;
+	//The status of the DefinitionMapping //cpichotjv2020
+	private MappingStatus s2;
+	//The status of the existingMatch //cpichotjv2020
+	private MappingStatus s3;
+
 	
 //Constructors
 
@@ -58,6 +63,8 @@ public class Mapping implements Comparable<Mapping>
 		similarity = 1.0;
 		rel = MappingRelation.EQUIVALENCE;
 		s = MappingStatus.UNKNOWN;
+		s2 = MappingStatus.UNKNOWN;//cpichotjv2020
+		s3 = MappingStatus.UNKNOWN;//cpichotjv2020
 	}
 	
 	/**
@@ -73,6 +80,8 @@ public class Mapping implements Comparable<Mapping>
 		similarity = Math.round(sim*10000)/10000.0;
 		rel = MappingRelation.EQUIVALENCE;
 		s = MappingStatus.UNKNOWN;
+		s2 = MappingStatus.UNKNOWN;//cpichotjv2020
+		s3 = MappingStatus.UNKNOWN;//cpichotjv2020
 	}
 	
 	/**
@@ -89,6 +98,8 @@ public class Mapping implements Comparable<Mapping>
 		similarity = Math.round(sim*10000)/10000.0;
 		rel = r;
 		s = MappingStatus.UNKNOWN;
+		s2 = MappingStatus.UNKNOWN;//cpichotjv2020
+		s3 = MappingStatus.UNKNOWN;//cpichotjv2020
 	}
 	
 	/**
@@ -102,6 +113,9 @@ public class Mapping implements Comparable<Mapping>
 		similarity = m.similarity;
 		rel = m.rel;
 		s = m.s;
+		s2 = m.s2; //cpichotjv2020
+		s3 = m.s3; //cpichotjv2020
+
 	}
 
 //Public Methods
@@ -189,6 +203,22 @@ public class Mapping implements Comparable<Mapping>
 		return s;
 	}
 	
+	/** //cpichotjv2020
+	 * @return the status of this Definition Mapping
+	 */
+	public MappingStatus getStatus2()
+	{
+		return s2;
+	}
+	
+	/** //cpichotjv2020
+	 * @return the status of this Definition Mapping
+	 */
+	public MappingStatus getStatus3()
+	{
+		return s3;
+	}
+	
 	/**
 	 * @return the id of the target term
 	 */
@@ -230,7 +260,27 @@ public class Mapping implements Comparable<Mapping>
 	public void setStatus(MappingStatus s)
 	{
 		this.s = s;
+	}	
+	
+	/**  //cpichot2020
+	 * Sets the Definition MappingStatus of this Mapping
+	 * @param s: the Mapping status to set
+	 */
+	public void setStatus2(MappingStatus s)
+	{
+		this.s2 = s;
 	}
+	
+	/**  //cpichot2020
+	 * Sets the Definition MappingStatus of this Mapping
+	 * @param s: the Mapping status to set
+	 */
+	
+	public void setStatus3(MappingStatus s)
+	{
+		this.s3 = s;
+	}
+
 	
 	/**
 	 * @return the Mapping in String form, formatted for the AML GUI
@@ -272,4 +322,68 @@ public class Mapping implements Comparable<Mapping>
 			out += "\t" + s;
 		return out;
 	}
+	
+	//cpichotjv2020
+	public String toString2()
+	{
+		AML aml = AML.getInstance();
+		URIMap uris = aml.getURIMap();
+		Ontology source = aml.getSource();
+		Ontology target = aml.getTarget();
+		String out = uris.getURI(sourceId) + "\t" + source.getName(sourceId) +
+				"\t" + uris.getURI(targetId) + "\t" + target.getName(targetId) +
+				"\t" + similarity + "\t" + rel.toString();
+		if(!s2.equals(MappingStatus.UNKNOWN))
+			out += "\t" + s2;
+		return out;
+	}//cpichotjv2020
+	
+	//cpichotjv2020
+	public String defString(String myString, String myCutter){ //CP
+		String[] myStringSplitted = myString.split(myCutter);
+		String out = myStringSplitted [0];
+		for(int i = 1; i < myStringSplitted.length-1; i++){
+			out += myCutter + myStringSplitted [i];
+		}
+		out += myCutter + "i_def_" + myStringSplitted [myStringSplitted.length-1];
+		return out; 
+	}//cpichotjv2020
+	
+	//cpichotjv2020
+	public String toString2Def()
+	{
+		AML aml = AML.getInstance();
+		URIMap uris = aml.getURIMap();
+		Ontology source = aml.getSource();
+		Ontology target = aml.getTarget();
+		String out = "";
+		if(s2.equals(MappingStatus.CORRECT)){
+			out = "<rdf:Description rdf:about='" + uris.getURI(sourceId) + "'>";
+			out += "\n <skos:definition rdf:resource='" + defString(uris.getURI(sourceId),"/") + "'/>";
+			out += "\n</rdf:Description>";
+			out += "\n\n<rdf:Description rdf:about='" + defString(uris.getURI(sourceId),"/") + "'>";
+			out += "\n <status:hasSource rdf:datatype='http://www.w3.org/2001/XMLSchema#string'>" + 
+			target.getURI() + "</status:hasSource>";
+			out += "\n <rdf:value xml:lang='en'>" + target.getDefinitions(targetId).replaceAll("(^\\[|\\]$)", "") + "</rdf:value>";
+			out += "\n</rdf:Description>\n";
+			}
+		return out;
+	}//cpichotjv2020
+
+	public String toString2Match()
+	{
+		AML aml = AML.getInstance();
+		URIMap uris = aml.getURIMap();
+		//Ontology source = aml.getSource();
+		//Ontology target = aml.getTarget();
+		String out = "";
+		if(s.equals(MappingStatus.CORRECT)){
+			out = "<rdf:Description rdf:about='" + uris.getURI(sourceId) + "'>";
+			out += "\n <skos:exactMatch rdf:resource='" + uris.getURI(targetId) + "'/>";
+			out += "\n</rdf:Description>\n";
+			}
+		return out;
+	}
+
+
 }

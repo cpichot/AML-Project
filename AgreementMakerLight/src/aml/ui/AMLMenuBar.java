@@ -41,6 +41,7 @@ public class AMLMenuBar extends JMenuBar implements ActionListener, Runnable, Wi
 	private Console c;
     private JMenu file, match, filter;
     private JMenuItem openO, closeO, openA,	closeA, saveA,
+                      matchExisting,  //cpichotjv2020
     				  matchAuto, matchManual, addC, addP,
     				  evaluate, resolve, flag, remove;
     private Thread action, console;
@@ -83,6 +84,9 @@ public class AMLMenuBar extends JMenuBar implements ActionListener, Runnable, Wi
         matchManual = new JMenuItem("Custom Match");
         matchManual.addActionListener(this);
         match.add(matchManual);
+        matchExisting = new JMenuItem("Existing Match"); //cpichotjv2020
+        matchExisting.addActionListener(this); //cpichotjv2020
+        match.add(matchExisting); //cpichotjv2020
         match.addSeparator();
         addC = new JMenuItem();
         addC.setText("Add Class Mapping");
@@ -210,6 +214,11 @@ public class AMLMenuBar extends JMenuBar implements ActionListener, Runnable, Wi
 		{
 			new AddPropertyMapping();
 		}
+		else if(o == matchExisting) //cpichotjv2020
+		{
+			aml.getAlignment().loadExistingMatch();
+			aml.refreshGUI();			
+		}
 		//Filter Options
 		else if(o == evaluate)
 		{
@@ -238,6 +247,7 @@ public class AMLMenuBar extends JMenuBar implements ActionListener, Runnable, Wi
 		closeO.setEnabled(aml.hasOntologies());
 		matchAuto.setEnabled(aml.hasOntologies());
 		matchManual.setEnabled(aml.hasOntologies());
+		matchExisting.setEnabled(aml.hasAlignment()); //cpichotjv2020
 		openA.setEnabled(aml.hasOntologies());
 		closeA.setEnabled(aml.hasAlignment());
 		saveA.setEnabled(aml.hasAlignment());
@@ -310,6 +320,8 @@ public class AMLMenuBar extends JMenuBar implements ActionListener, Runnable, Wi
 		if(returnVal == JFileChooser.APPROVE_OPTION)
 		{
 			String f = fc.getSelectedFile().getAbsolutePath();
+			String f2 = fc.getSelectedFile().getAbsolutePath();//cpichotjv2020
+			String f3 = fc.getSelectedFile().getAbsolutePath();//cpichotjv2020
 			String filter = fc.getFileFilter().getDescription();
 			if(filter.startsWith("OAEI"))
 			{
@@ -332,6 +344,23 @@ public class AMLMenuBar extends JMenuBar implements ActionListener, Runnable, Wi
 					JOptionPane.showMessageDialog(this, "Could not save alignment!\n" + 
 							x.getMessage(),	"Error", JOptionPane.ERROR_MESSAGE); 
 				}
+
+				f2 = f + ".DEFINITIONS";//cpichotjv2020
+				try{aml.saveAlignmentTSV2(f2);}
+				catch(Exception x)
+				{
+					JOptionPane.showMessageDialog(this, "Could not save DEFINITION for alignment!\n" + 
+							x.getMessage(),	"Error", JOptionPane.ERROR_MESSAGE); 
+				}
+				
+				f3 = f + ".EXACTMATCH";//cpichotjv2020
+				try{aml.saveAlignmentTSV3(f3);}
+				catch(Exception x)
+				{
+					JOptionPane.showMessageDialog(this, "Could not save DEFINITION for alignment!\n" + 
+							x.getMessage(),	"Error", JOptionPane.ERROR_MESSAGE); 
+				}
+
 			}
 		}
 	}

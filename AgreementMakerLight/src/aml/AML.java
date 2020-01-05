@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Vector;
 
+import javax.swing.JOptionPane;
 import javax.swing.UIManager;
 
 import org.apache.log4j.PropertyConfigurator;
@@ -893,6 +894,8 @@ public class AML
 		System.out.println("Classes: " + source.count(EntityType.CLASS));
 		System.out.println("Individuals: " + source.count(EntityType.INDIVIDUAL));
 		System.out.println("Properties: " + (source.count(EntityType.DATA)+source.count(EntityType.OBJECT)));
+		System.out.println("Lexicon: " + (source.getLexicon().size()));//cpichotjv2020
+		System.out.println("Definitions: " + (source.getDefinitions().size()));//cpichotjv2020
 		time = System.currentTimeMillis()/1000;
 		System.out.println("Loading target ontology");
 		target = new Ontology(tgt);
@@ -901,6 +904,8 @@ public class AML
 		System.out.println("Classes: " + target.count(EntityType.CLASS));
 		System.out.println("Individuals: " + target.count(EntityType.INDIVIDUAL));
 		System.out.println("Properties: " + (target.count(EntityType.DATA)+target.count(EntityType.OBJECT)));
+		System.out.println("Lexicon: " + (target.getLexicon().size()));//cpichotjv2020
+		System.out.println("Definitions: " + (target.getDefinitions().size()));//cpichotjv2020
 		System.out.println("Direct Relationships: " + rels.relationshipCount());
 		time = System.currentTimeMillis()/1000;
 		System.out.println("Running transitive closure on RelationshipMap");
@@ -921,9 +926,13 @@ public class AML
     	sw.extendLexicons();
     	ParenthesisExtender p = new ParenthesisExtender();
     	p.extendLexicons();
-    	System.out.println("Finished!");	
+    	System.out.println("Finished!");
+		JOptionPane.showMessageDialog(null,
+				  "You are using the AML modified version\n"
+				+ "allowing for definitions (from target)\n"
+				+ "      and exactMatchings exports      ", "WARNING", JOptionPane.PLAIN_MESSAGE);//cpichotjv2020
 	}
-	
+
 	public void openOntologies(URI src, URI tgt) throws OWLOntologyCreationException
 	{
 		closeOntologies();
@@ -1103,6 +1112,18 @@ public class AML
     {
     	a.saveTSV(file);
     	needSave = false;
+    }
+    
+    public void saveAlignmentTSV2(String file) throws Exception //cpichotjv2020
+    {
+    	a.saveTSV2(file);
+    	//needSave = false;
+    }
+    
+    public void saveAlignmentTSV3(String file) throws Exception //cpichotjv2020
+    {
+    	a.saveTSV3(file);
+    	//needSave = false;
     }
     
 	public void setAlignment(Alignment maps)
@@ -1297,7 +1318,13 @@ public class AML
 		if(userInterface != null)
 			userInterface.refresh();
 	}
-
+	
+	public void maskExisting() //cpichotjv2020
+	{
+		a.setMaskExisting(!a.getMaskExisting());
+		userInterface.refresh();
+	}
+	
 	public void startGUI()
 	{
         //Set the Nimbus look and feel

@@ -111,7 +111,8 @@ public class ResourcePanel extends JInternalFrame
 				doc.insertString(doc.getLength(), target.getURI(), u);
 				String tgt = " (" + target.count(EntityType.CLASS) + " classes, " +
 						(target.count(EntityType.DATA)+target.count(EntityType.OBJECT)) +
-						" properties, " + source.count(EntityType.INDIVIDUAL) + " individuals)\n";
+//cpichotjv2020						" properties, " + source.count(EntityType.INDIVIDUAL) + " individuals)\n";
+						" properties, " + target.count(EntityType.INDIVIDUAL) + " individuals)\n"; //cpichotjv2021			
 				doc.insertString(doc.getLength(), tgt, def);
 			}
 			

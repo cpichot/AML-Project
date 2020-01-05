@@ -66,6 +66,11 @@ public class Alignment implements Collection<Mapping>
 	private Ontology target;
 	//Link to the URIMap
 	private URIMap uris;
+	//Number of existing matches //cpichotjv2020
+	private int nbExistingMatch;
+	//Mask existing matches //cpichotjv2020
+	private boolean maskExisting;
+
 	
 //Constructors
 
@@ -81,6 +86,8 @@ public class Alignment implements Collection<Mapping>
 		source = aml.getSource();
 		target = aml.getTarget();
 		uris = aml.getURIMap();
+		nbExistingMatch = 0; //cpichotjv2020
+		maskExisting = false; //cpichotjv2020
 	}
 
 	/**
@@ -93,9 +100,12 @@ public class Alignment implements Collection<Mapping>
 		if(file.endsWith(".rdf") || file.endsWith(".xml"))
 			loadMappingsRDF(file);
 		else if(file.endsWith(".tsv"))
-			loadMappingsTSV(file);
+			//loadMappingsTSV(file);//cpichotjv2020
+			loadMappingsTSV2(file);//cpichotjv2020
 		else
 			throw new Exception("Unrecognized alignment format!");
+		nbExistingMatch = 0; //cpichotjv2020
+		maskExisting = false; //cpichotjv2020
 	}
 	
 	/**
@@ -106,9 +116,77 @@ public class Alignment implements Collection<Mapping>
 	{
 		this();
 		addAll(a);
+		nbExistingMatch = 0; //cpichotjv2020
+		maskExisting = false; //cpichotjv2020
 	}
 	
 //Public Methods
+	/**
+	 * Load existing matches from the source ontology //cpichotjv2020
+	 */
+	public void loadExistingMatch()
+	{
+		source = aml.getSource();
+		target = aml.getTarget();
+		nbExistingMatch = 0;
+
+//cpichotjv2020		for (int i=0; i< source.classCount();i++){
+		for (int i=0; i< source.count();i++){
+			Set<String> matchesTable = source.getExistingMatches(i);
+			if (matchesTable.size() > 0){
+				for (int matchIndex = 0; matchIndex < matchesTable.size(); matchIndex++){
+					String existingMatch = matchesTable.toArray()[matchIndex].toString();
+					
+					//check if the class (i) belongs to the present mapping					
+					for(Mapping m : maps){
+						if (m.getSourceId() == i){							
+						//check if this is the same mapping
+						int targetId = m.getTargetId();
+							if (target.getURI(targetId).equals(existingMatch)){
+								//System.out.println("same matching");
+								//System.out.println(existingMatch);
+								//System.out.println(target.getURI(targetId));
+								//set status3
+								m.setStatus3(MappingStatus.CORRECT);
+								nbExistingMatch = nbExistingMatch + 1;
+							}
+							else {
+								//System.out.println("different matching");
+								//System.out.println(existingMatch);
+								//System.out.println(target.getURI(targetId));								
+							}
+						}
+						else{
+							// the class (i) does not belong to the present mapping	
+						}
+					}						
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Set maskExisting //cpichotjv2020
+	 */
+	public void setMaskExisting(boolean newval)
+	{
+	this.maskExisting = newval;
+	}
+	/**
+	 * Get maskExisting //cpichotjv2020
+	 */
+	public boolean getMaskExisting()
+	{
+	return this.maskExisting;
+	}
+	/**
+	 * Get nbExistingMatch //cpichotjv2020
+	 */
+	public int getNbExistingMatch()
+	{
+	return this.nbExistingMatch;
+	}
+	
 
 	/**
 	 * Adds a new Mapping to the Alignment if it is non-redundant
@@ -190,6 +268,51 @@ public class Alignment implements Collection<Mapping>
 			return check;
 		}
 	}
+
+	public boolean add2(int sourceId, int targetId, double sim, MappingRelation r, MappingStatus s, MappingStatus s2)//cpichotjv2020
+	{
+		//Unless the Alignment is internal, we can't have a mapping
+		//involving entities that exist in both ontologies (they are
+		//the same entity, and therefore shouldn't map with other
+		//entities in either ontology)
+		if(!aml.matchSameURI() && (source.contains(targetId) || target.contains(sourceId)))
+			return false;
+		
+		//Construct the Mapping
+		Mapping m = new Mapping(sourceId, targetId, sim, r);
+		m.setStatus(s);
+		m.setStatus2(s2);
+		//If it isn't listed yet, add it
+		if(!sourceMaps.contains(sourceId,targetId))
+		{
+			maps.add(m);
+			sourceMaps.add(sourceId, targetId, m);
+			targetMaps.add(targetId, sourceId, m);
+			return true;
+		}
+		//Otherwise update the similarity
+		else
+		{
+			m = sourceMaps.get(sourceId,targetId);
+			boolean check = false;
+			if(m.getSimilarity() < sim)
+			{
+				m.setSimilarity(sim);
+				check = true;
+			}
+			if(!m.getRelationship().equals(r))
+			{
+				m.setRelationship(r);
+				check = true;
+			}
+			if(!m.getStatus().equals(s))
+			{
+				m.setStatus(s);
+				check = true;
+			}
+			return check;
+		}
+	}
 	
 	/**
 	 * Adds a new Mapping to the Alignment if it is non-redundant
@@ -226,6 +349,19 @@ public class Alignment implements Collection<Mapping>
 			return add(id2,id1,sim,r,s);
 		return false;
 	}
+	public boolean add2(String sourceURI, String targetURI, double sim, MappingRelation r, MappingStatus s, MappingStatus s2) //cpichotjv2020
+	{
+		int id1 = uris.getIndex(sourceURI);
+		int id2 = uris.getIndex(targetURI);
+		if(id1 == -1 || id2 == -1)
+			return false;
+		if(aml.getSource().contains(id1) && aml.getTarget().contains(id2))
+			return add2(id1,id2,sim,r,s,s2);//cpichotjv2020
+		else if(aml.getSource().contains(id2) && aml.getTarget().contains(id1))
+			return add2(id2,id1,sim,r,s,s2);//cpichotjv2020
+		return false;
+	}
+	
 	
 	@Override
 	public boolean add(Mapping m)
@@ -1065,6 +1201,55 @@ public class Alignment implements Collection<Mapping>
 		outStream.close();
 	}
 
+	/** //cpichotjv2020
+	 * Saves the Alignment into a .tsv file in AML format
+	 * @param file: the output file
+	 */
+	public void saveTSV2(String file) throws FileNotFoundException
+	{
+		PrintWriter outStream = new PrintWriter(new FileOutputStream(file));
+		PrintWriter outStreamDef = new PrintWriter(new FileOutputStream(file + ".rdf"));
+		
+		outStream.println("#AgreementMakerLight DEFINITION FROM Alignment File");
+		outStream.println("#Source ontology:\t" + source.getURI());
+		outStream.println("#Target ontology:\t" + target.getURI());
+		outStream.println("Source URI\tSource Label\tTarget URI\tTarget Label\tSimilarity\tRelationship\tStatus");
+
+		outStreamDef.println("<?xml version=\"1.0\" ?>");
+		outStreamDef.println("<rdf:RDF");
+		outStreamDef.println("xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'");
+		outStreamDef.println("xmlns:status='http://art.uniroma2.it/ontologies/vocbench#'");
+		outStreamDef.println("xmlns:skos='http://www.w3.org/2004/02/skos/core#'>");
+
+		for(Mapping m : maps)
+			outStream.println(m.toString2());
+		outStream.close();
+		for(Mapping m : maps)
+			if(!m.toString2Def().equals(""))
+					outStreamDef.println(m.toString2Def());
+		outStreamDef.println("</rdf:RDF>");
+		outStreamDef.close();
+	}
+
+	/** //cpichotjv2020
+	 * Saves the Alignment into a .tsv file in AML format
+	 * @param file: the output file
+	 */
+	public void saveTSV3(String file) throws FileNotFoundException
+	{
+		PrintWriter outStreamMatch = new PrintWriter(new FileOutputStream(file + ".rdf"));
+		
+		outStreamMatch.println("<?xml version=\"1.0\" ?>");
+		outStreamMatch.println("<rdf:RDF");
+		outStreamMatch.println("xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'");
+		outStreamMatch.println("xmlns:skos='http://www.w3.org/2004/02/skos/core#'>");
+		for(Mapping m : maps)
+			if(!m.toString2Match().equals(""))
+					outStreamMatch.println(m.toString2Match());
+		outStreamMatch.println("</rdf:RDF>");
+		outStreamMatch.close();
+	}
+		
 	@Override
 	public int size()
 	{
@@ -1260,4 +1445,83 @@ public class Alignment implements Collection<Mapping>
 		}
 		inStream.close();
 	}
+
+	private void loadMappingsTSV2(String file) throws Exception //cpichotjv2020
+	{
+		System.out.println(file);
+		System.out.println(file + ".DEFINITIONS");
+		BufferedReader inStream = new BufferedReader(new FileReader(file));
+		//BufferedReader inStream2 = new BufferedReader(new FileReader(file));
+		BufferedReader inStream2 = new BufferedReader(new FileReader(file + ".DEFINITIONS"));//cpichotjv2020
+		//First line contains the reference to AML
+		inStream.readLine();
+		//Second line contains the source ontology
+		inStream.readLine();
+		//Third line contains the target ontology
+		inStream.readLine();
+		//Fourth line contains the headers
+		inStream.readLine();
+		//First line contains the reference to AML
+		inStream2.readLine();
+		//Second line contains the source ontology
+		inStream2.readLine();
+		//Third line contains the target ontology
+		inStream2.readLine();
+		//Fourth line contains the headers
+		inStream2.readLine();
+		//And from the fifth line forward we have mappings
+		String line;
+		String line2;
+		
+		while((line = inStream.readLine()) != null)
+		{
+			line2 = inStream2.readLine();
+			String[] col = line.split("\t");
+			String[] col2 = line2.split("\t");//cpichotjv2020
+			
+			//First column contains the source uri
+			String sourceURI = col[0];
+			//Third contains the target uri
+			String targetURI = col[2];
+			//Fifth contains the similarity
+			String measure = col[4];
+			//Parse it, assuming 1 if a valid measure is not found
+			double similarity = 1;
+			if(measure != null)
+			{
+				try
+				{
+					similarity = Double.parseDouble(measure);
+		            if(similarity < 0 || similarity > 1)
+		            	similarity = 1;
+				}
+            	catch(Exception ex){/*Do nothing - use the default value*/};
+            }
+			//The sixth column contains the type of relation
+			MappingRelation rel;
+			if(col.length > 5)
+				rel = MappingRelation.parseRelation(col[5]);
+			//For compatibility with previous tsv format without listed relation
+			else
+				rel = MappingRelation.EQUIVALENCE;
+			//The seventh column, if it exists, contains the status of the Mapping
+			MappingStatus st;
+			MappingStatus st2;//cpichotjv2020
+			
+			if(col.length > 6)
+				st = MappingStatus.parseStatus(col[6]);
+			//For compatibility with previous tsv format without listed relation
+			else
+				st = MappingStatus.UNKNOWN;
+			if(col2.length > 6)
+				st2 = MappingStatus.parseStatus(col2[6]);
+			//For compatibility with previous tsv format without listed relation
+			else
+				st2 = MappingStatus.UNKNOWN;
+			add2(sourceURI, targetURI, similarity, rel, st, st2);
+		}
+		inStream.close();
+		inStream2.close();
+	}
+
 }

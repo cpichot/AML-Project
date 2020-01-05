@@ -67,6 +67,8 @@ public class StringParser
 		return name.matches("[0-9]*")
 			//digits with an intervening separator
 			|| name.matches("[0-9]+[_:\\.\\-][0-9]+")
+			//a c followed by one 1to9 digit...(anaee)
+			|| name.matches("c[1-9]?+[_:]?.+")//cpichotjv2020
 			//a single letter
 			|| name.matches("[a-zA-Z]{1}")
 			//a single letter followed by digits

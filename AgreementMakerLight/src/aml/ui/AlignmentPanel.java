@@ -36,6 +36,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JInternalFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.ToolTipManager;//cpichotjv2020
 import javax.swing.border.BevelBorder;
 
 import aml.AML;
@@ -52,9 +53,11 @@ public class AlignmentPanel extends JInternalFrame implements ActionListener, It
 	private AML aml;
 	private Alignment a;
 	private Vector<JCheckBox> check;
+	private Vector<JCheckBox> check2;//cpichotjv2020
 	private Vector<MappingButton> mappings;
 	private JCheckBox selectAll;
-	private JButton reset, setCorrect, setIncorrect, sortAsc, sortDes, search;
+	//private JButton reset, setCorrect, setIncorrect, sortAsc, sortDes, search;//cpichotjv2020
+	private JButton reset, setCorrect, setIncorrect, sortAsc, sortDes, search, maskExisting;//cpichotjv2020
 	private JPanel dialogPanel, headerPanel, mappingPanel;
 	private JScrollPane scrollPane;
 
@@ -96,6 +99,16 @@ public class AlignmentPanel extends JInternalFrame implements ActionListener, It
 						check.get(i).setSelected(false);
 					}
 				}
+				if(check2.get(i).isSelected())//cpichotjv2020
+				{
+					check2.get(i).setSelected(false);
+					if(!a.get(i).getStatus2().equals(MappingStatus.UNKNOWN))
+					{
+						a.get(i).setStatus2(MappingStatus.UNKNOWN);
+						mappings.get(i).refresh();
+						check2.get(i).setSelected(false);
+					}
+				}
 			}
 		}
 		else if(b == setCorrect)
@@ -112,6 +125,16 @@ public class AlignmentPanel extends JInternalFrame implements ActionListener, It
 						check.get(i).setSelected(false);
 					}
 				}
+				if(check2.get(i).isSelected()) //cpichotjv2020
+				{
+					//check2.get(i).setSelected(false);
+					if(!a.get(i).getStatus2().equals(MappingStatus.CORRECT))
+					{
+						a.get(i).setStatus2(MappingStatus.CORRECT);
+						mappings.get(i).refresh();
+						//check2.get(i).setSelected(false);
+					}
+				} else {a.get(i).setStatus2(MappingStatus.UNKNOWN);} //cpichotjv2020
 			}
 		}
 		else if(b == setIncorrect)
@@ -130,6 +153,10 @@ public class AlignmentPanel extends JInternalFrame implements ActionListener, It
 				}
 			}
 		}
+		else if(b == maskExisting) //cpichotjv2020
+		{
+			aml.maskExisting();
+		}
 		else if(b == sortAsc)
 		{
 			aml.sortAscending();
@@ -145,6 +172,19 @@ public class AlignmentPanel extends JInternalFrame implements ActionListener, It
 		else
 		{
 			int index = mappings.indexOf(b);
+			
+			//change index value if existing Matches are masked //cpichotjv2020
+			if(a.getMaskExisting())
+			{
+				int myIndex = 0;
+				while (myIndex <= index){
+					if(a.get(myIndex).getStatus3().equals(MappingStatus.CORRECT)){
+						index = index + 1;
+					}
+					myIndex = myIndex + 1;
+				}				
+			}//cpichotjv2020			
+			
 			if(index > -1)
 			{
 				aml.goTo(index);
@@ -203,6 +243,9 @@ public class AlignmentPanel extends JInternalFrame implements ActionListener, It
 			setIncorrect.setBackground(AMLColor.RED);
 			setIncorrect.setPreferredSize(new Dimension(110,28));
 			setIncorrect.addActionListener(this);
+			maskExisting = new JButton("Mask/display existing");//cpichotjv2020
+			maskExisting.setPreferredSize(new Dimension(110,28));//cpichotjv2020
+			maskExisting.addActionListener(this);//cpichotjv2020
 			sortAsc = new JButton("Sort \u2191");
 			sortAsc.setPreferredSize(new Dimension(110,28));
 			sortAsc.addActionListener(this);
@@ -220,6 +263,7 @@ public class AlignmentPanel extends JInternalFrame implements ActionListener, It
 			left.add(setCorrect);
 			left.add(reset);
 			left.add(setIncorrect);
+			left.add(maskExisting);//cpichotjv2020
 			headerPanel.add(left);
 			JPanel right = new JPanel();
 			right.setBorder(new BevelBorder(1));
@@ -232,23 +276,49 @@ public class AlignmentPanel extends JInternalFrame implements ActionListener, It
 			mappingPanel = new JPanel(new GridLayout(0,1));
 			a = aml.getAlignment();
 			check = new Vector<JCheckBox>();
+			check2 = new Vector<JCheckBox>();//cpichotjv2020
 			mappings = new Vector<MappingButton>(a.size());
 			mappingPanel.setMaximumSize(new Dimension(mappingPanel.getMaximumSize().width,a.size()*30));
 			for(Mapping m : a)
 			{
-				JCheckBox c = new JCheckBox(""); 
+//cpichotjv2020				JCheckBox c = new JCheckBox(""); 
+				JCheckBox c = new JCheckBox("match"); //cpichotjv2020
 				check.add(c);
+				
+				JCheckBox c2 = new JCheckBox("def"); //cpichotjv2020
+				check2.add(c2);//cpichotjv2020				
+				if(m.getStatus2().equals(MappingStatus.CORRECT)){//cpichotjv2020
+					c2.setSelected(true);//cpichotjv2020
+				}//cpichotjv2020
+				if(m.getStatus3().equals(MappingStatus.CORRECT)){//cpichotjv2020
+					c.setText("*exist");//cpichotjv2020
+				}//cpichotjv2020				
+				
 				MappingButton b = new MappingButton(m);
 				mappings.add(b);
 				b.addActionListener(this);
+				
+				Integer sourceId = m.getSourceId(); //cpichotjv2020
+				Integer targetId = m.getTargetId(); //cpichotjv2020
+				ToolTipManager.sharedInstance().setDismissDelay(10000);; //cpichotjv2020
+				c.setToolTipText(aml.getSource().getDefinitions(sourceId).toString() + "<->" + //cpichotjv2020
+						aml.getTarget().getDefinitions(targetId).toString()); //cpichotjv2020
+
+				if(!a.getMaskExisting() || (a.getMaskExisting() && !m.getStatus3().equals(MappingStatus.CORRECT)) )
+				{//cpichotjv2020
 				JPanel subPanel = new JPanel(new BorderLayout());
 				subPanel.add(c,BorderLayout.LINE_START);
+				JPanel subPanel2 = new JPanel(new BorderLayout());//cpichotjv2020
+				subPanel2.add(c2,BorderLayout.LINE_START);//cpichotjv2020
 				JPanel subSubPanel = new JPanel(new BorderLayout());
-				subSubPanel.add(b,BorderLayout.LINE_START);
+				subSubPanel.add(subPanel2,BorderLayout.LINE_START);//cpichotjv2020
+				//subSubPanel.add(b,BorderLayout.LINE_START);//cpichotjv2020
+				subSubPanel.add(b,BorderLayout.CENTER);//CP
 				subPanel.add(subSubPanel, BorderLayout.CENTER);
 				subPanel.setMaximumSize(new Dimension(subPanel.getMaximumSize().width,28));
 				subPanel.setPreferredSize(new Dimension(subPanel.getPreferredSize().width,28));
 				mappingPanel.add(subPanel);
+				}//cpichotjv2020
 			}
 			JPanel alignment = new JPanel();
 			alignment.setLayout(new BoxLayout(alignment, BoxLayout.PAGE_AXIS));
