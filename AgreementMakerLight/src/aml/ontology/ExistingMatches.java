@@ -102,11 +102,12 @@ public class ExistingMatches
 		String s;
 		Provenance p;
 		
-		int index = 0;//cpichotjv2020
-/* cpichotjv2020
-		//Get the type of the entity
+//		int index = 0;//cpichotjv2020
+				//Get the type of the entity
 		EntityType e = uris.getType(id);
 		int index = getIndex(e);
+		
+/* cpichotjv2020
 
 		//If the name is not in english we parse it as a formula
 		if(!language.equals("en"))
@@ -122,7 +123,8 @@ public class ExistingMatches
 				return;
 			//If it is a formula, parse it and label it as such
 			else if(StringParser.isFormula(name))
- cpichotjv2020	*/
+ cpichotjv2020	*/		
+		
 			if(StringParser.isFormula(name))	
 			{
 				s = StringParser.normalizeFormula(name);
@@ -138,13 +140,14 @@ public class ExistingMatches
 			//Otherwise, parse it normally
 			else
 			{
-				s = StringParser.normalizeName(name);
+//cpichotjv2020				s = StringParser.normalizeName(name);
+				s = name ;
 //cpichotjv2020				p = new Provenance(type, source, language, weight);
-				p = new Provenance(LexicalType.FORMULA, source, "en", 1.0);
-				
-				
+				p = new Provenance(LexicalType.FORMULA, source, "en", 1.0);							
 			}
 		//cpichotjv2020}
+			
+			
 		//Then update the tables
 		entityDefinitions[index].add(s,id,p);
 		definitionEntities[index].add(id,s,p);
@@ -579,7 +582,7 @@ public class ExistingMatches
 	 * @return the list of names associated with the entity
 	 */
 	public Set<String> getNames(int id)
-	{
+	{	
 		int index = getIndex(uris.getType(id));
 		if(definitionEntities[index].contains(id))
 			return definitionEntities[index].keySet(id);
@@ -860,7 +863,7 @@ public class ExistingMatches
 	
 	private int getIndex(EntityType e)
 	{
-		EntityType[] types = EntityType.values();
+		EntityType[] types = EntityType.values();		
 		for(int i = 0; i < types.length; i++)
 			if(types[i].equals(e))
 				return i;

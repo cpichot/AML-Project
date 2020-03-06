@@ -131,11 +131,14 @@ public class Alignment implements Collection<Mapping>
 		nbExistingMatch = 0;
 
 //cpichotjv2020		for (int i=0; i< source.classCount();i++){
-		for (int i=0; i< source.count();i++){
+		//cpichotMarch2020 for (int i=0; i< source.count();i++){
+		for (int i=1; i< source.count()+1;i++){
 			Set<String> matchesTable = source.getExistingMatches(i);
 			if (matchesTable.size() > 0){
 				for (int matchIndex = 0; matchIndex < matchesTable.size(); matchIndex++){
+					//String existingMatch = matchesTable.toArray()[matchIndex].toString();
 					String existingMatch = matchesTable.toArray()[matchIndex].toString();
+					
 					
 					//check if the class (i) belongs to the present mapping					
 					for(Mapping m : maps){

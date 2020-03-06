@@ -545,7 +545,6 @@ public class Ontology
 	            		//OWLNamedIndividual ni = factory.getOWLNamedIndividual((IRI) annotation.getValue());
 	            		//existingMatch = ni.toString();
 	            		existingMatch = annotation.getValue().toString();
-	            		//System.out.println(existingMatch);
 	            	}
 	            	existingMatches.add(id, existingMatch, source);	            	
             	}//cpichotjv2020
